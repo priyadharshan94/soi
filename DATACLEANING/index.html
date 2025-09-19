@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Verification App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 80px auto;
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007BFF;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .result {
+      margin-top: 25px;
+      padding: 15px;
+      border-radius: 5px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .real {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .fake {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Company Verification Tool</h2>
+    <label for="companyName">Enter Company Name:</label>
+    <input type="text" id="companyName" placeholder="e.g., TCS">
+    <button onclick="verifyCompany()">Verify</button>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    function verifyCompany() {
+      const name = document.getElementById('companyName').value.trim();
+      const resultBox = document.getElementById('result');
+
+      if (!name) {
+        resultBox.style.display = 'block';
+        resultBox.className = 'result fake';
+        resultBox.innerText = 'Please enter a company name.';
+        return;
+      }
+
+      // Real companies list
+      const realCompanies = ['TCS', 'Wipro', 'Cognizant'];
+
+      // Check if the entered name matches any real company (case-insensitive)
+      const isReal = realCompanies.some(company =>
+        name.toLowerCase() === company.toLowerCase()
+      );
+
+      resultBox.style.display = 'block';
+      if (isReal) {
+        resultBox.className = 'result real';
+        resultBox.innerText = '✅ This appears to be a real company.';
+      } else {
+        resultBox.className = 'result fake';
+        resultBox.innerText = '⚠️ This company could not be verified. Please double-check.';
+      }
+    }
+  </script>
+
+</body>
+</html>
