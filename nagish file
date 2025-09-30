@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Indian Nagish - Live Speech Captions</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 2rem;
+    background: #f4f6f8;
+    color: #333;
+  }
+  h1 {
+    color: #007bff;
+  }
+  #transcript {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+    min-height: 100px;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  button {
+    background: #007bff;
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  button:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<h1>Indian Nagish - Live Speech Captions</h1>
+<button id="startBtn">Start Listening</button>
+<button id="stopBtn" disabled>Stop Listening</button>
+
+<div id="transcript" aria-live="polite" aria-atomic="true">Click "Start Listening" and speak in Hindi or Indian English.</div>
+
+<script>
+  // Check for browser support
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("Sorry, your browser doesn't support Speech Recognition API. Please use Chrome or Edge.");
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.continuous = true; // Keep listening until stopped
+  recognition.interimResults = true; // Show partial (live) results
+
+  // Set language: change 'hi-IN' for Hindi or 'en-IN' for Indian English
+  recognition.lang = 'hi-IN';
+
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const transcriptDiv = document.getElementById('transcript');
+
+  let finalTranscript = '';
+
+  recognition.onstart = () => {
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    transcriptDiv.textContent = "Listening... Please speak now.";
+  };
+
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript + ' ';
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+    transcriptDiv.innerHTML = `<strong>Final:</strong> ${finalTranscript}<br><em>Interim:</em> ${interimTranscript}`;
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error", event.error);
+    transcriptDiv.textContent = `Error occurred in recognition: ${event.error}`;
+    if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+      transcriptDiv.textContent += "\nPlease allow microphone access and refresh the page.";
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+    }
+  };
+
+  recognition.onend = () => {
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    transcriptDiv.textContent += '\n\nRecognition stopped. Click "Start Listening" to try again.';
+  };
+
+  // Function to request mic permission explicitly
+  async function requestMicPermission() {
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      return true;
+    } catch (err) {
+      console.error('Microphone permission denied', err);
+      alert('Microphone access is needed to use this app. Please allow microphone permissions.');
+      return false;
+    }
+  }
+
+  startBtn.onclick = async () => {
+    const permissionGranted = await requestMicPermission();
+    if (!permissionGranted) return;
+
+    finalTranscript = '';
+    try {
+      recognition.start();
+    } catch (err) {
+      console.log('Recognition start error:', err);
+    }
+  };
+
+  stopBtn.onclick = () => {
+    recognition.stop();
+  };
+</script>
+
+</body>
+</html>
