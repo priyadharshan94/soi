@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Voice Assistant Job Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #2251df;
+  padding: 10px;
+}
+h2 {
+  text-align: center;
+}
+.card {
+  background: #5bddd7;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+button.voice {
+  background: green;
+}
+.job {
+  border-top: 1px solid #ddd;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎤 Voice Assistant Job Portal</h2>
+
+<div class="card">
+  <button class="voice" onclick="startBot()">🎤 Start Voice Assistant</button>
+</div>
+
+<div id="status" class="card">Status: Waiting...</div>
+<div id="jobs"></div>
+
+<script>
+// ================== DEMO JOB DATA ==================
+if (!localStorage.jobs) {
+  localStorage.jobs = JSON.stringify([
+    { title: "Plumber Needed", skill: "plumber", location: "chennai", salary: "₹800/day" },
+    { title: "Electrician Needed", skill: "electrician", location: "madurai", salary: "₹900/day" },
+    { title: "Cleaner Needed", skill: "cleaner", location: "chennai", salary: "₹600/day" }
+  ]);
+}
+
+// ================== VOICE SETUP ==================
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.lang = "en-IN";
+recognition.interimResults = false;
+
+let step = 0;
+let userSkill = "";
+let userLocation = "";
+
+// ================== SPEAK ==================
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "en-IN";
+  speechSynthesis.speak(msg);
+}
+
+// ================== BOT START ==================
+function startBot() {
+  step = 1;
+  userSkill = "";
+  userLocation = "";
+  speak("Welcome. I will help you find a job.");
+  setTimeout(() => askNext(), 2000);
+}
+
+// ================== BOT FLOW ==================
+function askNext() {
+  if (step === 1) {
+    document.getElementById("status").innerText = "Listening for skill...";
+    speak("What is your skill? For example plumber or electrician.");
+    recognition.start();
+  } 
+  else if (step === 2) {
+    document.getElementById("status").innerText = "Listening for location...";
+    speak("Which location are you looking for?");
+    recognition.start();
+  } 
+  else if (step === 3) {
+    searchJobs();
+  }
+}
+
+// ================== LISTEN RESULT ==================
+recognition.onresult = function(event) {
+  const answer = event.results[0][0].transcript.toLowerCase();
+
+  if (step === 1) {
+    userSkill = answer;
+    speak("You said " + userSkill);
+    step = 2;
+    setTimeout(() => askNext(), 1500);
+  } 
+  else if (step === 2) {
+    userLocation = answer;
+    speak("You said " + userLocation);
+    step = 3;
+    setTimeout(() => askNext(), 1500);
+  }
+};
+
+// ================== JOB SEARCH ==================
+function searchJobs() {
+  const jobs = JSON.parse(localStorage.jobs);
+  const results = jobs.filter(j =>
+    j.skill.includes(userSkill) &&
+    j.location.includes(userLocation)
+  );
+
+  const container = document.getElementById("jobs");
+  container.innerHTML = "";
+
+  if (results.length === 0) {
+    speak("Sorry. No jobs found.");
+    container.innerHTML = "<div class='card'>No jobs found</div>";
+    return;
+  }
+
+  speak("I found " + results.length + " jobs.");
+  results.forEach(job => {
+    speak(job.title + " in " + job.location + ". Salary " + job.salary);
+
+    container.innerHTML += `
+      <div class="card job">
+        <h4>${job.title}</h4>
+        <p>Skill: ${job.skill}</p>
+        <p>Location: ${job.location}</p>
+        <p>Salary: ${job.salary}</p>
+        <button onclick="applyJob()">Apply</button>
+      </div>
+    `;
+  });
+}
+
+// ================== APPLY ==================
+function applyJob() {
+  speak("You have applied successfully. The employer will contact you.");
+  alert("Applied Successfully");
+}
+</script>
+
+</body>
+</html>

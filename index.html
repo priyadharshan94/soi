@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>South India Voice Job Assistant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  padding: 10px;
+}
+h2 { text-align: center; }
+.card {
+  background: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+.lang-btn { background: #28a745; margin-top: 8px; }
+.hidden { display: none; }
+.job {
+  border-top: 1px solid #ddd;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.status {
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎤 South India Voice Job Assistant</h2>
+
+<!-- START SCREEN -->
+<div class="card" id="startScreen">
+  <button onclick="startBot()">🎤 Start Voice Assistant</button>
+</div>
+
+<!-- LANGUAGE SCREEN -->
+<div class="card hidden" id="langScreen">
+  <h3>Select Language</h3>
+  <button class="lang-btn" onclick="selectLanguage('ta-IN')">தமிழ்</button>
+  <button class="lang-btn" onclick="selectLanguage('te-IN')">తెలుగు</button>
+  <button class="lang-btn" onclick="selectLanguage('kn-IN')">ಕನ್ನಡ</button>
+  <button class="lang-btn" onclick="selectLanguage('ml-IN')">മലയാളം</button>
+</div>
+
+<!-- STATUS -->
+<div class="card status hidden" id="statusBox">Status</div>
+
+<!-- JOB RESULTS -->
+<div id="jobs"></div>
+
+<script>
+// ================= SAMPLE JOB DATA =================
+if (!localStorage.jobs) {
+  localStorage.jobs = JSON.stringify([
+    { title: "Plumber Needed", skill: "plumber", location: "chennai", salary: "₹800/day" },
+    { title: "Electrician Needed", skill: "electrician", location: "madurai", salary: "₹900/day" },
+    { title: "Cleaner Needed", skill: "cleaner", location: "kochi", salary: "₹600/day" },
+    { title: "Electrician Needed", skill: "electrician", location: "bengaluru", salary: "₹1000/day" }
+  ]);
+}
+
+// ================= GLOBAL STATE =================
+let language = "en-IN";
+let step = 0;
+let userSkill = "";
+let userLocation = "";
+let voices = [];
+
+// ================= LOAD VOICES =================
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
+voices = speechSynthesis.getVoices();
+
+// ================= SPEAK SAFELY =================
+function speak(text) {
+  if (!text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = language;
+  const v = voices.find(v => v.lang === language);
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+// ================= START BOT =================
+function startBot() {
+  document.getElementById("startScreen").classList.add("hidden");
+  document.getElementById("langScreen").classList.remove("hidden");
+  document.getElementById("statusBox").classList.remove("hidden");
+  updateStatus("Choose your language");
+  speak("Please select your language");
+}
+
+// ================= SELECT LANGUAGE =================
+function selectLanguage(lang) {
+  language = lang;
+  document.getElementById("langScreen").classList.add("hidden");
+
+  const greet = {
+    "ta-IN": "வணக்கம். நான் உங்களுக்கு வேலை தேட உதவுகிறேன்.",
+    "te-IN": "నమస్కారం. నేను మీకు ఉద్యోగం కనుగొనడంలో సహాయపడతాను.",
+    "kn-IN": "ನಮಸ್ಕಾರ. ನಾನು ನಿಮಗೆ ಕೆಲಸ ಹುಡುಕಲು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ.",
+    "ml-IN": "നമസ്കാരം. ഞാൻ ജോലി കണ്ടെത്താൻ സഹായിക്കും."
+  };
+  speak(greet[language]);
+
+  step = 1;
+  setTimeout(askNext, 2500);
+}
+
+// ================= STATUS UPDATE =================
+function updateStatus(text) {
+  document.getElementById("statusBox").innerText = text;
+}
+
+// ================= CREATE RECOGNITION =================
+function createRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = language;
+  rec.interimResults = false;
+  return rec;
+}
+
+// ================= BOT FLOW =================
+function askNext() {
+  let question = "";
+
+  if (step === 1) {
+    updateStatus("🎧 Listening for skill...");
+    question = {
+      "ta-IN": "உங்கள் வேலை திறன் என்ன?",
+      "te-IN": "మీ నైపుణ్యం ఏమిటి?",
+      "kn-IN": "ನಿಮ್ಮ ಕೌಶಲ್ಯ ಏನು?",
+      "ml-IN": "നിങ്ങളുടെ കഴിവ് എന്താണ്?"
+    }[language];
+  }
+
+  if (step === 2) {
+    updateStatus("🎧 Listening for location...");
+    question = {
+      "ta-IN": "எந்த இடத்தில் வேலை வேண்டும்?",
+      "te-IN": "ఏ ప్రాంతంలో పని కావాలి?",
+      "kn-IN": "ಯಾವ ಸ್ಥಳದಲ್ಲಿ ಕೆಲಸ ಬೇಕು?",
+      "ml-IN": "ഏത് സ്ഥലത്ത് ജോലി വേണം?"
+    }[language];
+  }
+
+  speak(question);
+
+  const rec = createRecognition();
+  rec.start();
+
+  rec.onresult = e => {
+    const answer = e.results[0][0].transcript.toLowerCase();
+
+    if (step === 1) {
+      userSkill = answer;
+      step = 2;
+      setTimeout(askNext, 2000);
+    } else if (step === 2) {
+      userLocation = answer;
+      step = 3;
+      setTimeout(searchJobs, 2000);
+    }
+  };
+}
+
+// ================= SEARCH JOBS =================
+function searchJobs() {
+  updateStatus("🔍 Searching jobs...");
+
+  const jobs = JSON.parse(localStorage.jobs);
+  const results = jobs.filter(j =>
+    j.skill.includes(userSkill) &&
+    j.location.includes(userLocation)
+  );
+
+  const container = document.getElementById("jobs");
+  container.innerHTML = "";
+
+  if (results.length === 0) {
+    speak({
+      "ta-IN": "வேலை கிடைக்கவில்லை",
+      "te-IN": "ఉద్యోగాలు లభించలేదు",
+      "kn-IN": "ಕೆಲಸಗಳು ಸಿಗಲಿಲ್ಲ",
+      "ml-IN": "ജോലികൾ ലഭിച്ചില്ല"
+    }[language]);
+    updateStatus("❌ No jobs found");
+    return;
+  }
+
+  speak(results.length + " jobs found");
+  updateStatus("✅ Jobs found");
+
+  results.forEach(job => {
+    speak(job.title + " " + job.location + " " + job.salary);
+    container.innerHTML += `
+      <div class="card job">
+        <h4>${job.title}</h4>
+        <p>${job.location}</p>
+        <p>${job.salary}</p>
+        <button onclick="applyJob()">Apply</button>
+      </div>
+    `;
+  });
+}
+
+// ================= APPLY =================
+function applyJob() {
+  speak({
+    "ta-IN": "விண்ணப்பம் வெற்றிகரமாக அனுப்பப்பட்டது",
+    "te-IN": "దరఖాస్తు విజయవంతమైంది",
+    "kn-IN": "ಅರ್ಜಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+    "ml-IN": "അപേക്ഷ വിജയകരമായി സമർപ്പിച്ചു"
+  }[language]);
+  updateStatus("📨 Applied successfully");
+  alert("Applied Successfully");
+}
+</script>
+
+</body>
+</html>
